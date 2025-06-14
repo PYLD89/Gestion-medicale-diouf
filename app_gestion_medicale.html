@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application de Gestion Médicale</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+    header { background-color: #3498db; color: white; padding: 20px; text-align: center; }
+    main { padding: 20px; max-width: 800px; margin: auto; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    form { display: flex; flex-direction: column; gap: 10px; }
+    input, textarea, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 10px; background-color: #2ecc71; border: none; color: white; border-radius: 4px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background-color: #eee; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestion Médicale - Diouf Consulting</h1>
+  </header>
+  <main>
+    <h2>Ajouter un patient</h2>
+    <form id="patientForm">
+      <input type="text" id="nom" placeholder="Nom" required>
+      <input type="text" id="prenom" placeholder="Prénom" required>
+      <input type="number" id="age" placeholder="Âge" required>
+      <textarea id="historique" placeholder="Historique médical"></textarea>
+      <button type="submit">Enregistrer</button>
+    </form>
+
+    <h2>Liste des patients</h2>
+    <table>
+      <thead>
+        <tr><th>Nom</th><th>Prénom</th><th>Âge</th><th>Historique</th></tr>
+      </thead>
+      <tbody id="patientsTable"></tbody>
+    </table>
+  </main>
+
+  <script>
+    const patientForm = document.getElementById('patientForm');
+    const patientsTable = document.getElementById('patientsTable');
+
+    const dbName = "MedicalDB";
+    let db;
+
+    // Initialiser IndexedDB
+    const request = indexedDB.open(dbName, 1);
+
+    request.onerror = function(event) {
+      console.error("Erreur d'ouverture de la base de données", event);
+    };
+
+    request.onsuccess = function(event) {
+      db = event.target.result;
+      afficherPatients();
+    };
+
+    request.onupgradeneeded = function(event) {
+      db = event.target.result;
+      const objectStore = db.createObjectStore("patients", { keyPath: "id", autoIncrement: true });
+      objectStore.createIndex("nom", "nom", { unique: false });
+    };
+
+    patientForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nom = document.getElementById('nom').value;
+      const prenom = document.getElementById('prenom').value;
+      const age = document.getElementById('age').value;
+      const historique = document.getElementById('historique').value;
+
+      const transaction = db.transaction(["patients"], "readwrite");
+      const store = transaction.objectStore("patients");
+      const data = { nom, prenom, age, historique };
+      store.add(data);
+
+      transaction.oncomplete = function() {
+        afficherPatients();
+        patientForm.reset();
+      };
+    });
+
+    function afficherPatients() {
+      const transaction = db.transaction(["patients"], "readonly");
+      const store = transaction.objectStore("patients");
+      const request = store.getAll();
+
+      request.onsuccess = function(e) {
+        const patients = e.target.result;
+        patientsTable.innerHTML = "";
+        patients.forEach(patient => {
+          const row = `<tr>
+            <td>${patient.nom}</td>
+            <td>${patient.prenom}</td>
+            <td>${patient.age}</td>
+            <td>${patient.historique}</td>
+          </tr>`;
+          patientsTable.innerHTML += row;
+        });
+      };
+    }
+  </script>
+</body>
+</html>

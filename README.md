@@ -12,7 +12,7 @@ Cette application est une Progressive Web App (PWA) simple, conçue en HTML/CSS/
 
 ## 📁 Structure du projet
 
-```
+```text
 /
 ├── index.html                # Fichier principal HTML
 ├── manifest.json             # Fichier manifest PWA
